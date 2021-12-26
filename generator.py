@@ -22,6 +22,11 @@ luminosity_dict = dict(zip(names, lum_list))
 
 def get_inclination(rng, count):
     return(rng.uniform(low=0, high=89, size=count))
+
+def get_inclination_single(rng, count=1):
+    inclins = rng.uniform(low=0, high=89, size=count)
+    return(inclins[0])
+
 # def get_luminosity(rng, count):
 #     luminosities= []
 #     names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',\
@@ -47,14 +52,16 @@ def get_luminosity(rng, count):
              'OGLE BLG-DN-0531_0','OGLE BLG-DN-0588_0','OGLE BLG-DN-0595_0','OGLE BLG-DN-0690_2',\
              'OGLE BLG-DN-0783_0','OGLE BLG-DN-0826_0','OGLE BLG-DN-0899_0']
     obj_idxs = rng.integers(low=0,high=len(names)-1, size=count)
-
-    for obj_idx in obj_idxs:
-        luminosities.append(luminosity_dict[names[obj_idx]])
-        OGLE_id.append(names[obj_idx][12:16])
+    if count > 1:
+        for obj_idx in obj_idxs:
+            luminosities.append(luminosity_dict[names[obj_idx]])
+            OGLE_id.append(names[obj_idx][12:16])
+    else:
+        luminosities = luminosity_dict[names[obj_idxs[0]]]
+        OGLE_id = names[obj_idxs[0]][12:16]
     return luminosities, OGLE_id
+
 MWDENSITY = MWDensity()
-
-
 def get_coordinates(rng, count):
     mw_coords = MWDENSITY.sample_eq(shape=count, rng=rng)
     return mw_coords
@@ -87,46 +94,34 @@ def hist_mpeak(ms, m_max):
         ax.set_title(f'passband_{passband}')
         ax.set_xlabel(f'magnitude')
     return m_peak_dict
-#     for i in range(6):
-#         axs[i].hist(m_peaks[i], bins=50)
-#         axs[i].set_title(f'passband_{passbands[i]}')
-#         axs[i].set_xlabel(f'magnitude')
 
 start_index = 42
-n_event = 10000
+event_num = 10000
 i_event = 0
 rng = np.random.default_rng(start_index)
 
-inclinations = get_inclination(rng, count=n_event)
-luminosities, OGLE_ids = get_luminosity(rng, count=n_event)
-coordinates = get_coordinates(rng, count=n_event)
-extinction = get_extinction(coordinates.ra.deg, coordinates.dec.deg, coordinates.distance.pc, cache_dir=None)
-
 passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
-mag_es_all = []
-mag_es_lclib = []
-
-f = open('LCLIB_correct_ievent.txt', 'w')
+f = open('LCLIB_10k.txt', 'w')
 
 f.write(f"""SURVEY: LSST
 FILTERS: ugrizY
 MODEL: m-Dwarf-Flare-Model
 RECUR_TYPE: NON-RECUR
 MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
-NEVENT: {n_event}
+NEVENT: {event_num}
 
 DOCUMENTATION:
-  PURPOSE: Supernovae outburst ligthtcurve using OGLE data, xx model and estimated distances from Gaia
+  PURPOSE: Supernovae outburst ligthtcurve using OGLE data and estimated distances from Gaia
   REF:
   - AUTHOR: Qifeng Cheng
   USAGE_KEY: GENMODEL
   NOTES:
-  - Lightcurve instances were taken from xxx
+  - Lightcurve instances were taken from OGLE
   - Distance data was taken from Gaia
-  - Extinction data was taken from xx
+  - Extinction data was taken from SFD, Bayestar
   PARAMS:
-  - OGLE_ID - OGLE detection ID
+  - OGLE_ID - OGLE Dwarf Nova Catalog object ID
   - start_time - Start time of the reference outburst (in HJD-2450000)
   - end_time - End time of the reference outburst (in HJD-2450000)
   - distance - Distance to the supernovae (in pc)
@@ -137,28 +132,27 @@ DOCUMENTATION_END:
 """
         )
 
-for OGLE_id, l, coord, i, extin in zip(OGLE_ids, luminosities, coordinates, inclinations,
-                                                extinction):
-    l = l.copy()
-    l.rename(columns={'L_u': 'u', 'L_g': 'g', 'L_r': 'r', 'L_i': 'i', 'L_z': 'z', 'L_y': 'y'}, inplace=True)
+mag_es_all = []
+mag_es_lclib = []
+
+while i_event < event_num:
+    l, OGLE_id = get_luminosity(rng, 1)
+    coord = get_coordinates(rng, 1)[0]
+    i = get_inclination_single(rng, 1)
+    extin = get_extinction(coord.ra.deg, coord.dec.deg, coord.distance.pc, cache_dir=None)
 
     distance_pc = coord.distance.to(u.pc).value
     distance_cm = coord.distance.to(u.cm).value
     ra = coord.ra.deg
     dec = coord.dec.deg
-
     coord_gal = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame='icrs').galactic
-    #     print(f'l:{l}')
+
+    l = l.copy()
+    l.rename(columns={'L_u': 'u', 'L_g': 'g', 'L_r': 'r', 'L_i': 'i', 'L_z': 'z', 'L_y': 'y'}, inplace=True)
     l_no_t = l.drop(axis=1, labels='t')
-    #     print(f'l_no_t:{l_no_t}')
+
     flux = get_flux(L=l_no_t, d=distance_cm, i=i)
     mag_noe = -2.5 * np.log10(flux / 3.63e-20)
-    #     print(f'distance_pc:{distance_pc}')
-    #     print(f'distance_cm:{distance_cm}')
-    #     print(f'i:{i}')
-    #     print(f'flux:{flux}')
-    #     print(f'mag_noe:{mag_noe}')
-    #     print(np.min(mag_noe))
     l.update(mag_noe)
     mag_e = l.copy()
 
@@ -170,9 +164,10 @@ for OGLE_id, l, coord, i, extin in zip(OGLE_ids, luminosities, coordinates, incl
         continue
 
     anglematch_b = max(5, 0.5 * np.abs(coord_gal.b.deg))
+
     f.write(
         f'START_EVENT: {i_event}\n'
-        f'NROW: {len(mag_e)} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
+        f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
         f'PARVAL: {int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
         f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
     )
