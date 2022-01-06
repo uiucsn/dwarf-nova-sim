@@ -66,118 +66,148 @@ def find_flux(Mdot, nu, rin, rout, i, d, M):
 def norm_flux(F_old, F_peak):
     return (F_old * F_peak / np.max(F_old))
 
+def main():
+    data = ascii.read("analysis/fitting_info.csv")
+    dis_extin = ascii.read("analysis/extinction_1arcsec.csv")
 
-data = ascii.read("analysis/fitting_info.csv")
-dis_extin = ascii.read("analysis/extinction_1arcsec.csv")
-from light_curve import BazinFit
 
-fit_num = data['method_num']
-fit = BazinFit('mcmc-lmsder', mcmc_niter=100_000)
-selected_obj = data['name']
-c_i = data['outburst_index']
-t_st_al = data['t_start']
-t_ed_al = data['t_end']
+    fit_num = data['method_num']
+    fit = BazinFit('mcmc-lmsder', mcmc_niter=100_000)
+    selected_obj = data['name']
+    c_i = data['outburst_index']
+    t_st_al = data['t_start']
+    t_ed_al = data['t_end']
 
-distances_parsec = dict(zip(dis_extin['name'], dis_extin['distance']))
-extinction_baye = dict(zip(dis_extin['name'], dis_extin['extinction_baye']))
-extinction_sfd = dict(zip(dis_extin['name'], dis_extin['extinction_sfd']))
+    distances_parsec = dict(zip(dis_extin['name'], dis_extin['distance']))
+    extinction_baye = dict(zip(dis_extin['name'], dis_extin['extinction_baye']))
+    extinction_sfd = dict(zip(dis_extin['name'], dis_extin['extinction_sfd']))
 
-Mdot_tables = []
+    Mdot_tables = []
 
-for name, t_st, t_ed in zip(selected_obj, t_st_al, t_ed_al):
-    k = name[-4:]
-    file_name = "phot/OGLE-BLG-DN-" + k + ".dat"
-    obj_name = "OGLE BLG-DN-" + k
-    t, m = data_loading(file_name)
-    idx = (t >= t_st) & (t <= t_ed)
-    cand_t = t[idx]
-    cand_m = m[idx]
-    cand_flux = 3.63e-20 * 10 ** (-0.4 * cand_m)
-    try:
-        parameters = fit(cand_t, cand_flux)
-        #                 print([f'{name} = {p:.3g}' for name, p in zip(fit.names, parameters)])
-        delt_t = 0.1  # days
-        t_start = cand_t.min()
-        t_end = cand_t.max() + 2 * delt_t
-        #                 num_t = (t_start - t_end)/delt_t
-        #                 print(t_start, t_end, num_t)
-        t_model = np.arange(t_start, t_end, delt_t)
-        flux_model = fit.model(np.arange(t_start, t_end, delt_t), parameters)
-        m_model = np.log10(flux_model / 3.63e-20) / (-0.4)
+    for name, t_st, t_ed in zip(selected_obj, t_st_al, t_ed_al):
+        k = name[-4:]
+        file_name = "phot/OGLE-BLG-DN-" + k + ".dat"
+        obj_name = "OGLE BLG-DN-" + k
+        t, m = data_loading(file_name)
+        idx = (t >= t_st) & (t <= t_ed)
+        cand_t = t[idx]
+        cand_m = m[idx]
+        cand_flux = 3.63e-20 * 10 ** (-0.4 * cand_m)
+        try:
+            parameters = fit(cand_t, cand_flux)
+            delt_t = 0.1  # days
+            t_start = cand_t.min()
+            t_end = cand_t.max() + 2 * delt_t
+            t_model = np.arange(t_start, t_end, delt_t)
+            flux_model = fit.model(np.arange(t_start, t_end, delt_t), parameters)
+            m_model = np.log10(flux_model / 3.63e-20) / (-0.4)
+    #plot modeled light_curve
+            #         fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, figsize=(6, 14))
+            #         fig.suptitle(f'{obj_name}_{c_i}')
+            #         ax1.plot(cand_t, cand_flux, 'x')
+            #         ax1.plot(t_model, flux_model)
+            #         ax1.set_ylabel('observed flux with model')
 
-        #         fig, (ax1, ax2, ax3) = plt.subplots(3, sharex=True, figsize=(6, 14))
-        #         fig.suptitle(f'{obj_name}_{c_i}')
-        #         ax1.plot(cand_t, cand_flux, 'x')
-        #         ax1.plot(t_model, flux_model)
-        #         ax1.set_ylabel('observed flux with model')
+    #finding Mdot under two different situations
+            Mdot_peak = 4e-8 * M_sun / (yr_to_sec)
 
-        ##################finding Mdot under two different situations####################
-        Mdot_peak = 4e-8 * M_sun / (yr_to_sec)
-
-        if obj_name in distances_parsec:  # ones that have distances
-            print('have distance', obj_name)
-            distance = distances_parsec[obj_name] * parsec_to_cm
-            mass = M_sun
-            MD_pre = 2e12
-            MD_al = []
-
-            if np.isnan(extinction_baye[obj_name]):
-                extinction = extinction_sfd[obj_name]
-            else:
-                extinction = extinction_baye[obj_name]
-            m_model_extins = m_model - extinction
-            fv_model_extins = 3.63e-20 * 10 ** (-0.4 * m_model_extins)
-
-            for fv_modle_extin in fv_model_extins:
-                #                 fv = 3.63e-20 * 10 ** (-0.4 * m_model_extin)
-                MD = find_Mdot(fv=fv_modle_extin, lamb=540e-7, rin=0.0025 * R_sun, rout=1e11, i=np.pi / 4, d=distance,
-                               M=mass, Mdot_previous=MD_pre)
-                MD_al.append(MD['x'][0])
-                MD_pre = MD['x'][0]
-
-            if np.max(MD_al) > Mdot_peak:
-                print('start to normalize')
-                flux_peak = find_flux(Mdot_peak, nu=c / 540e-7, rin=0.0025 * R_sun, rout=10 ** 11, i=np.pi / 4,
-                                      d=distance, M=M_sun)
-                flux_norm = norm_flux(F_old=fv_model_extins, F_peak=flux_peak)
-                print(f'Mdot_old = {MD_al}')
-
-                MD_al = []
+            if obj_name in distances_parsec:  # ones that have distances
+                print('have distance', obj_name)
+                distance = distances_parsec[obj_name] * parsec_to_cm
+                mass = M_sun
                 MD_pre = 2e12
-                for f_norm in flux_norm:
+                MD_al = []
+
+                if np.isnan(extinction_baye[obj_name]):
+                    extinction = extinction_sfd[obj_name]
+                else:
+                    extinction = extinction_baye[obj_name]
+                m_model_extins = m_model - extinction
+                fv_model_extins = 3.63e-20 * 10 ** (-0.4 * m_model_extins)
+
+                for fv_modle_extin in fv_model_extins:
                     #                 fv = 3.63e-20 * 10 ** (-0.4 * m_model_extin)
-                    MD = find_Mdot(fv=f_norm, lamb=540e-7, rin=0.0025 * R_sun, rout=1e11, i=np.pi / 4, d=distance,
+                    MD = find_Mdot(fv=fv_modle_extin, lamb=540e-7, rin=0.0025 * R_sun, rout=1e11, i=np.pi / 4, d=distance,
                                    M=mass, Mdot_previous=MD_pre)
                     MD_al.append(MD['x'][0])
                     MD_pre = MD['x'][0]
-                print(f'Mdot_norm = {MD_al}')
-        else:  # the ones that don't have distances/
-            print('method2_1kpc', obj_name)
-            distance = 1e3 * parsec_to_cm
-            mass = M_sun
-            MD_pre = 2e12
-            MD_al = []
-            m_model_extins = m_model
-            flux_peak = find_flux(Mdot_peak, nu=c / 540e-7, rin=0.0025 * R_sun, rout=10 ** 11, i=np.pi / 4,
-                                  d=1e3 * parsec_to_cm, M=M_sun)
-            flux_norm = norm_flux(F_old=flux_model, F_peak=flux_peak)
 
-            for f_norm in flux_norm:
-                #                 fv = 3.63e-20 * 10 ** (-0.4 * m_model_extin)
-                MD = find_Mdot(fv=f_norm, lamb=540e-7, rin=0.0025 * R_sun, rout=1e11, i=np.pi / 4, d=distance, M=mass,
-                               Mdot_previous=MD_pre)
-                MD_al.append(MD['x'][0])
-                MD_pre = MD['x'][0]
+                if np.max(MD_al) > Mdot_peak:
+                    print('start to normalize')
+                    flux_peak = find_flux(Mdot_peak, nu=c / 540e-7, rin=0.0025 * R_sun, rout=10 ** 11, i=np.pi / 4,
+                                          d=distance, M=M_sun)
+                    flux_norm = norm_flux(F_old=fv_model_extins, F_peak=flux_peak)
+                    print(f'Mdot_old = {MD_al}')
 
-        t = Table()
-        t['t'] = t_model
-        t['Mdot'] = MD_al
+                    MD_al = []
+                    MD_pre = 2e12
+                    for f_norm in flux_norm:
+                        #                 fv = 3.63e-20 * 10 ** (-0.4 * m_model_extin)
+                        MD = find_Mdot(fv=f_norm, lamb=540e-7, rin=0.0025 * R_sun, rout=1e11, i=np.pi / 4, d=distance,
+                                       M=mass, Mdot_previous=MD_pre)
+                        MD_al.append(MD['x'][0])
+                        MD_pre = MD['x'][0]
+                    print(f'Mdot_norm = {MD_al}')
+            else:  # the ones that don't have distances/
+                print('method2_1kpc', obj_name)
+                distance = 1e3 * parsec_to_cm
+                mass = M_sun
+                MD_pre = 2e12
+                MD_al = []
+                m_model_extins = m_model
+                flux_peak = find_flux(Mdot_peak, nu=c / 540e-7, rin=0.0025 * R_sun, rout=10 ** 11, i=np.pi / 4,
+                                      d=1e3 * parsec_to_cm, M=M_sun)
+                flux_norm = norm_flux(F_old=flux_model, F_peak=flux_peak)
 
-        ################### find luminosity at other passband ######################################
+                for f_norm in flux_norm:
+                    #                 fv = 3.63e-20 * 10 ** (-0.4 * m_model_extin)
+                    MD = find_Mdot(fv=f_norm, lamb=540e-7, rin=0.0025 * R_sun, rout=1e11, i=np.pi / 4, d=distance, M=mass,
+                                   Mdot_previous=MD_pre)
+                    MD_al.append(MD['x'][0])
+                    MD_pre = MD['x'][0]
+
+            t = Table()
+            t['t'] = t_model
+            t['Mdot'] = MD_al
+
+    # find luminosity at other passbands
+
+            lambs = [3694.25e-8, 4840.83e-8, 6257.74e-8, 7560.48e-8, 8701.29e-8, 9749.32e-8]  # u, g, r, i, z, y
+            passband_name = ['L_u', 'L_g', 'L_r', 'L_i', 'L_z', 'L_y']
+
+            for lam_passband, name_passband in zip(lambs, passband_name):
+                flux_derived = []
+                for Md in MD_al:
+                    flux_derived.append(
+                        find_flux(Mdot=Md, nu=c / lam_passband, rin=0.0025 * R_sun, rout=10 ** 11, i=0, d=1, M=M_sun))
+
+                flux_derived = np.array(flux_derived)
+                luminosity_derived = 2 * np.pi * flux_derived
+                t[f'{name_passband}'] = luminosity_derived
+
+        except RuntimeError:
+            continue
+        Mdot_tables.append(t)
+
+
+    direc = 'analysis_Mdot'
+    os.makedirs(direc, exist_ok=True)
+    names = data['name']
+    outbursts = data['outburst_index']
+    for table_out, obj_name, outburst_i in zip(Mdot_tables, names, outbursts):
+        table_out.write(os.path.join(direc, f'{obj_name}_{outburst_i}.csv'), format = 'ascii.csv', overwrite=True)
+
+    #find derived Luminosity in other passband
+    l_tables = []
+    for name, index in zip(data['name'], data['outburst_index']):
+        data_Mdot = ascii.read(f'analysis_Mdot/{name}_{index}.csv')
+        MD_al = data_Mdot['Mdot']
+        time = data_Mdot['t']
 
         lambs = [3694.25e-8, 4840.83e-8, 6257.74e-8, 7560.48e-8, 8701.29e-8, 9749.32e-8]  # u, g, r, i, z, y
-        passband_name = ['L_u', 'L_g', 'L_r', 'L_i', 'L_z', 'L_y']
+        passband_name = ['u', 'g', 'r', 'i', 'z', 'y']
 
+        l_table = Table()
         for lam_passband, name_passband in zip(lambs, passband_name):
             flux_derived = []
             for Md in MD_al:
@@ -186,50 +216,19 @@ for name, t_st, t_ed in zip(selected_obj, t_st_al, t_ed_al):
 
             flux_derived = np.array(flux_derived)
             luminosity_derived = 2 * np.pi * flux_derived
-            #             m_abs = np.log10(flux_derived/3.63e-20) / (-0.4)
-            t[f'{name_passband}'] = luminosity_derived
-    #             t[f'm_abs_{name_passband}'] = m_abs
-    except RuntimeError:
-        continue
-    Mdot_tables.append(t)
+            m_abs = np.log10(flux_derived / 3.63e-20) / (-0.4)
 
+            l_table[f'L_{name_passband}'] = luminosity_derived
+            l_table[f'm_abs_{name_passband}'] = m_abs
 
-direc = 'analysis_Mdot'
-os.makedirs(direc, exist_ok=True)
-names = data['name']
-outbursts = data['outburst_index']
-for table_out, obj_name, outburst_i in zip(Mdot_tables, names, outbursts):
-    table_out.write(os.path.join(direc, f'{obj_name}_{outburst_i}.csv'), format = 'ascii.csv', overwrite=True)
+        l_tables.append(l_table)
 
-####################for derived Luminosity##############
-l_tables = []
-for name, index in zip(data['name'], data['outburst_index']):
-    data_Mdot = ascii.read(f'analysis_Mdot/{name}_{index}.csv')
-    MD_al = data_Mdot['Mdot']
-    time = data_Mdot['t']
+    direc = 'analysis_luminosity'
+    os.makedirs(direc, exist_ok=True)
+    names = data['name']
+    outbursts = data['outburst_index']
+    for l_table, obj_name, outburst_i in zip(l_tables, names, outbursts):
+        l_table.write(os.path.join(direc, f'{obj_name}_{outburst_i}_luminosity.csv'), format = 'ascii.csv', overwrite=True)
 
-    lambs = [3694.25e-8, 4840.83e-8, 6257.74e-8, 7560.48e-8, 8701.29e-8, 9749.32e-8]  # u, g, r, i, z, y
-    passband_name = ['u', 'g', 'r', 'i', 'z', 'y']
-
-    l_table = Table()
-    for lam_passband, name_passband in zip(lambs, passband_name):
-        flux_derived = []
-        for Md in MD_al:
-            flux_derived.append(
-                find_flux(Mdot=Md, nu=c / lam_passband, rin=0.0025 * R_sun, rout=10 ** 11, i=0, d=1, M=M_sun))
-
-        flux_derived = np.array(flux_derived)
-        luminosity_derived = 2 * np.pi * flux_derived
-        m_abs = np.log10(flux_derived / 3.63e-20) / (-0.4)
-
-        l_table[f'L_{name_passband}'] = luminosity_derived
-        l_table[f'm_abs_{name_passband}'] = m_abs
-
-    l_tables.append(l_table)
-
-direc = 'analysis_luminosity'
-os.makedirs(direc, exist_ok=True)
-names = data['name']
-outbursts = data['outburst_index']
-for l_table, obj_name, outburst_i in zip(l_tables, names, outbursts):
-    l_table.write(os.path.join(direc, f'{obj_name}_{outburst_i}_luminosity.csv'), format = 'ascii.csv', overwrite=True)
+if __name__ == '__main__':
+    main()

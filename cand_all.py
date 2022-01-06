@@ -92,7 +92,7 @@ def plot_cand(t, m, candidates, mean, sigma, n, n_below, name):
     basena = os.path.basename(name)
     title, extension = os.path.splitext(basena)
     plt.title(title)
-    direc = 'pictures2'
+    direc = 'pictures'
     os.makedirs(direc, exist_ok=True)
     plt.savefig(os.path.join(direc, f'{title}.png'))
     plt.close()
