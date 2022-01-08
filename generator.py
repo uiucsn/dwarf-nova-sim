@@ -5,6 +5,7 @@ import pandas as pd
 import astropy.units as u
 from ch_vars.spatial_distr import MilkyWayDensityJuric2008 as MWDensity
 from ch_vars.extinction import get_sfd_thin_disk_ebv as get_extinction
+import os
 
 lum_list= []
 names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',\
@@ -45,11 +46,11 @@ def get_inclination_single(rng, count=1):
 def get_luminosity(rng, count):
     luminosities = []
     OGLE_id = []
-    names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',\
-             'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',\
-             'OGLE BLG-DN-0174_0','OGLE BLG-DN-0233_1','OGLE BLG-DN-0286_0','OGLE BLG-DN-0305_2',\
-             'OGLE BLG-DN-0373_0','OGLE BLG-DN-0376_1','OGLE BLG-DN-0421_2','OGLE BLG-DN-0444_0',\
-             'OGLE BLG-DN-0531_0','OGLE BLG-DN-0588_0','OGLE BLG-DN-0595_0','OGLE BLG-DN-0690_2',\
+    names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',
+             'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',
+             'OGLE BLG-DN-0174_0','OGLE BLG-DN-0233_1','OGLE BLG-DN-0286_0','OGLE BLG-DN-0305_2',
+             'OGLE BLG-DN-0373_0','OGLE BLG-DN-0376_1','OGLE BLG-DN-0421_2','OGLE BLG-DN-0444_0',
+             'OGLE BLG-DN-0531_0','OGLE BLG-DN-0588_0','OGLE BLG-DN-0595_0','OGLE BLG-DN-0690_2',
              'OGLE BLG-DN-0783_0','OGLE BLG-DN-0826_0','OGLE BLG-DN-0899_0']
     obj_idxs = rng.integers(low=0,high=len(names)-1, size=count)
     if count > 1:
@@ -83,125 +84,136 @@ def hist_mpeak(ms, m_max):
     passbands = ['u', 'g', 'r', 'i', 'z', 'y']
     fig, axs = plt.subplots(2, 3, figsize=(24,16))
     m_peaks = []
+
     for passband in passbands:
         m_peak_single_passband = []
         for m in ms:
             m_peak_single_passband.append(np.min(m[passband]))
         m_peaks.append(np.array(m_peak_single_passband))
     m_peak_dict = dict(zip(passbands, m_peaks))
+
+    fig.suptitle("Histogram for Peak Magnitude in each passband")
     for ax, m_peak, passband in zip(axs.reshape(-1),m_peaks,passbands):
         ax.hist(m_peak[m_peak<m_max], bins=50)
         ax.set_title(f'passband_{passband}')
         ax.set_xlabel(f'magnitude')
+        ax.set_xlim(5,99)
+
+    direc = 'pictures_generated'
+    os.makedirs(direc, exist_ok=True)
+    plt.savefig(os.path.join(direc, f'Peak_magnitude_hist.png'))
+    plt.close()
+
     return m_peak_dict
 
-def main():
-    start_index = 42
-    event_num = 10000
-    i_event = 0
-    rng = np.random.default_rng(start_index)
-    # with open('LCLIB_10k.txt', 'w') as f:
-    #     f.write()
-
-    passbands = ['u', 'g', 'r', 'i', 'z', 'y']
-
-    f = open('LCLIB_10k.txt', 'w')
-
+def write_header(f, event_num):
     f.write(f"""SURVEY: LSST
-    FILTERS: ugrizY
-    MODEL: m-Dwarf-Flare-Model
-    RECUR_TYPE: NON-RECUR
-    MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
-    NEVENT: {event_num}
-    
-    DOCUMENTATION:
-      PURPOSE: Supernovae outburst ligthtcurve using OGLE data and estimated distances from Gaia
-      REF:
-      - AUTHOR: Qifeng Cheng
-      USAGE_KEY: GENMODEL
-      NOTES:
-      - Lightcurve instances were taken from OGLE
-      - Distance data was taken from Gaia
-      - Extinction data was taken from SFD, Bayestar
-      PARAMS:
-      - OGLE_ID - OGLE Dwarf Nova Catalog object ID
-      - start_time - Start time of the reference outburst (in HJD-2450000)
-      - end_time - End time of the reference outburst (in HJD-2450000)
-      - distance - Distance to the supernovae (in pc)
-      - inclination - Inclination of the observation (in degree)
-    DOCUMENTATION_END:
-    
-    #------------------------------
-    """
-            )
+FILTERS: ugrizY
+MODEL: m-Dwarf-Flare-Model
+RECUR_TYPE: NON-RECUR
+MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
+NEVENT: {event_num}
 
-    mag_es_all = []
-    mag_es_lclib = []
+DOCUMENTATION:
+  PURPOSE: Supernovae outburst ligthtcurve using OGLE data and estimated distances from Gaia
+  REF:
+  - AUTHOR: Qifeng Cheng
+  USAGE_KEY: GENMODEL
+  NOTES:
+  - Lightcurve instances were taken from OGLE
+  - Distance data was taken from Gaia
+  - Extinction data was taken from SFD, Bayestar
+  PARAMS:
+  - OGLE_ID - OGLE Dwarf Nova Catalog object ID
+  - start_time - Start time of the reference outburst (in HJD-2450000)
+  - end_time - End time of the reference outburst (in HJD-2450000)
+  - distance - Distance to the supernovae (in pc)
+  - inclination - Inclination of the observation (in degree)
+DOCUMENTATION_END:
 
-    while i_event < event_num:
-        l, OGLE_id = get_luminosity(rng, 1)
-        coord = get_coordinates(rng, 1)[0]
-        i = get_inclination_single(rng, 1)
-        extin = get_extinction(coord.ra.deg, coord.dec.deg, coord.distance.pc, cache_dir=None)
-
-        distance_pc = coord.distance.to(u.pc).value
-        distance_cm = coord.distance.to(u.cm).value
-        ra = coord.ra.deg
-        dec = coord.dec.deg
-        coord_gal = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame='icrs').galactic
-
-        l = l.copy()
-        l.rename(columns={'L_u': 'u', 'L_g': 'g', 'L_r': 'r', 'L_i': 'i', 'L_z': 'z', 'L_y': 'y'}, inplace=True)
-        l_no_t = l.drop(axis=1, labels='t')
-
-        flux = get_flux(L=l_no_t, d=distance_cm, i=i)
-        mag_noe = -2.5 * np.log10(flux / 3.63e-20)
-        l.update(mag_noe)
-        mag_e = l.copy()
-
-        for passband in passbands:
-            mag_e[passband] = mag_noe[passband] + extin * LSST_A_TO_EBV[passband]
-        mag_es_all.append(mag_e)
-
-        if any([np.any((mag_e[passband] > 99.0)) or np.any((mag_e[passband] < 5.0)) for passband in passbands]):
-            continue
-
-        anglematch_b = max(5, 0.5 * np.abs(coord_gal.b.deg))
-
-        f.write(
-            f'START_EVENT: {i_event}\n'
-            f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
-            f'PARVAL: {int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
-            f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
+#------------------------------
+"""
         )
 
-        time = mag_e.loc[0]['t']
-        f.write(f'T: {time:7.4f}')
+def main():
+    passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
-        for passband in passbands:
-            f.write(f' {mag_e.loc[0][passband]:.3f}')
-        f.write(f'\n')
+    start_index = 42
+    event_num = 100000
+    i_event = 0
+    rng = np.random.default_rng(start_index)
 
-        for i_row in range(1, len(mag_e)):
-            time = mag_e.loc[i_row]['t']
+    with open('LCLIB_test.txt', 'w') as f:
+        write_header(f, event_num)
+
+        mag_es_all = []
+        mag_es_lclib = []
+
+        while i_event < event_num:
+            l, OGLE_id = get_luminosity(rng, 1)
+            coord = get_coordinates(rng, 1)[0]
+            i = get_inclination_single(rng, 1)
+            extin = get_extinction(coord.ra.deg, coord.dec.deg, coord.distance.pc, cache_dir=None)
+
+            distance_pc = coord.distance.to(u.pc).value
+            distance_cm = coord.distance.to(u.cm).value
+            ra = coord.ra.deg
+            dec = coord.dec.deg
+            coord_gal = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame='icrs').galactic
+
+            l = l.copy()
+            l.rename(columns={'L_u': 'u', 'L_g': 'g', 'L_r': 'r', 'L_i': 'i', 'L_z': 'z', 'L_y': 'y'}, inplace=True)
+            l_no_t = l.drop(axis=1, labels='t')
+
+            flux = get_flux(L=l_no_t, d=distance_cm, i=i)
+            mag_noe = -2.5 * np.log10(flux / 3.63e-20)
+            l.update(mag_noe)
+            mag_e = l.copy()
+
+            for passband in passbands:
+                mag_e[passband] = mag_noe[passband] + extin * LSST_A_TO_EBV[passband]
+            mag_es_all.append(mag_e)
+
+            if any([np.any((mag_e[passband] > 99.0)) or np.any((mag_e[passband] < 5.0)) for passband in passbands]):
+                continue
+
+            anglematch_b = max(5, 0.5 * np.abs(coord_gal.b.deg))
+
+            f.write(
+                f'START_EVENT: {i_event}\n'
+                f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
+                f'PARVAL: {int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
+                f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
+            )
+
+            time = mag_e.loc[0]['t']
+            f.write(f'T: {time:7.4f}')
+
+            for passband in passbands:
+                f.write(f' {mag_e.loc[0][passband]:.3f}')
+            f.write(f'\n')
+
+            for i_row in range(1, len(mag_e)):
+                time = mag_e.loc[i_row]['t']
+                f.write(f'S: {time:7.4f}')
+
+                for passband in passbands:
+                    f.write(f' {mag_e.loc[i_row][passband]:.3f}')
+                f.write(f'\n')
+
+            time = mag_e.loc[len(mag_e) - 1]['t'] + 0.01
             f.write(f'S: {time:7.4f}')
 
             for passband in passbands:
-                f.write(f' {mag_e.loc[i_row][passband]:.3f}')
+                f.write(f' {mag_e.loc[0][passband]:.3f}')
             f.write(f'\n')
-
-        time = mag_e.loc[len(mag_e) - 1]['t'] + 0.01
-        f.write(f'S: {time:7.4f}')
-
-        for passband in passbands:
-            f.write(f' {mag_e.loc[0][passband]:.3f}')
-        f.write(f'\n')
-        f.write(
-            f'END_EVENT: {i_event}\n'
-            '\n'
-        )
-        mag_es_lclib.append(mag_e)
-        i_event = i_event + 1
+            f.write(
+                f'END_EVENT: {i_event}\n'
+                '\n'
+            )
+            mag_es_lclib.append(mag_e)
+            i_event = i_event + 1
+    mpeak_dict = hist_mpeak(mag_es_lclib, 30)
 
 if __name__ == '__main__':
     main()
