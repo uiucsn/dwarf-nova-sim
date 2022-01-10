@@ -9,6 +9,15 @@ import os
 
 passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
+
+selected_objs = ['OGLE BLG-DN-0001_3', 'OGLE BLG-DN-0001_4', 'OGLE BLG-DN-0002_0', 'OGLE BLG-DN-0002_1',
+                 'OGLE BLG-DN-0002_2', 'OGLE BLG-DN-0036_0', 'OGLE BLG-DN-0087_0', 'OGLE BLG-DN-0168_0',
+                 'OGLE BLG-DN-0174_0', 'OGLE BLG-DN-0233_1', 'OGLE BLG-DN-0286_0', 'OGLE BLG-DN-0305_2',
+                 'OGLE BLG-DN-0373_0', 'OGLE BLG-DN-0376_1', 'OGLE BLG-DN-0421_2', 'OGLE BLG-DN-0444_0',
+                 'OGLE BLG-DN-0531_0', 'OGLE BLG-DN-0588_0', 'OGLE BLG-DN-0595_0', 'OGLE BLG-DN-0690_2',
+                 'OGLE BLG-DN-0783_0', 'OGLE BLG-DN-0826_0', 'OGLE BLG-DN-0899_0']
+
+"""
 lum_list= []
 names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',\
          'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',\
@@ -22,14 +31,24 @@ for name in names:
     lum_table = pd.read_csv(f"{direc}/{name}.csv")
     lum_list.append((lum_table[['t', 'L_u','L_g','L_r','L_i','L_z', 'L_y']]))
 luminosity_dict = dict(zip(names, lum_list))
-
-def get_inclination(rng, count):
-    return rng.uniform(low=0, high=89, size=count)
+"""
 
 
-def get_inclination_single(rng, count=1):
-    inclins = rng.uniform(low=0, high=89, size=count)
-    return(inclins[0])
+def init_luminosity(init_data_direc):
+    lum_list = []
+    # names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',\
+    #          'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',\
+    #          'OGLE BLG-DN-0174_0','OGLE BLG-DN-0233_1','OGLE BLG-DN-0286_0','OGLE BLG-DN-0305_2',\
+    #          'OGLE BLG-DN-0373_0','OGLE BLG-DN-0376_1','OGLE BLG-DN-0421_2','OGLE BLG-DN-0444_0',\
+    #          'OGLE BLG-DN-0531_0','OGLE BLG-DN-0588_0','OGLE BLG-DN-0595_0','OGLE BLG-DN-0690_2',\
+    #          'OGLE BLG-DN-0783_0','OGLE BLG-DN-0826_0','OGLE BLG-DN-0899_0']
+
+    direc = init_data_direc
+    for name in selected_objs:
+        lum_table = pd.read_csv(f"{direc}/{name}.csv")
+        lum_list.append((lum_table[['t', 'L_u','L_g','L_r','L_i','L_z', 'L_y']]))
+    return dict(zip(selected_objs, lum_list))
+
 
 # def get_luminosity(rng, count):
 #     luminosities= []
@@ -47,23 +66,26 @@ def get_inclination_single(rng, count=1):
 #     return luminosities
 
 
+luminosity_dict = init_luminosity('analysis_Mdot')
+
+
 def get_luminosity(rng, count):
     luminosities = []
     OGLE_id = []
-    names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',
-             'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',
-             'OGLE BLG-DN-0174_0','OGLE BLG-DN-0233_1','OGLE BLG-DN-0286_0','OGLE BLG-DN-0305_2',
-             'OGLE BLG-DN-0373_0','OGLE BLG-DN-0376_1','OGLE BLG-DN-0421_2','OGLE BLG-DN-0444_0',
-             'OGLE BLG-DN-0531_0','OGLE BLG-DN-0588_0','OGLE BLG-DN-0595_0','OGLE BLG-DN-0690_2',
-             'OGLE BLG-DN-0783_0','OGLE BLG-DN-0826_0','OGLE BLG-DN-0899_0']
-    obj_idxs = rng.integers(low=0,high=len(names)-1, size=count)
+    # names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',
+    #          'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',
+    #          'OGLE BLG-DN-0174_0','OGLE BLG-DN-0233_1','OGLE BLG-DN-0286_0','OGLE BLG-DN-0305_2',
+    #          'OGLE BLG-DN-0373_0','OGLE BLG-DN-0376_1','OGLE BLG-DN-0421_2','OGLE BLG-DN-0444_0',
+    #          'OGLE BLG-DN-0531_0','OGLE BLG-DN-0588_0','OGLE BLG-DN-0595_0','OGLE BLG-DN-0690_2',
+    #          'OGLE BLG-DN-0783_0','OGLE BLG-DN-0826_0','OGLE BLG-DN-0899_0']
+    obj_idxs = rng.integers(low=0,high=len(selected_objs)-1, size=count)
     if count > 1:
         for obj_idx in obj_idxs:
-            luminosities.append(luminosity_dict[names[obj_idx]])
-            OGLE_id.append(names[obj_idx][12:16])
+            luminosities.append(luminosity_dict[selected_objs[obj_idx]])
+            OGLE_id.append(selected_objs[obj_idx][12:16])
     else:
-        luminosities = luminosity_dict[names[obj_idxs[0]]]
-        OGLE_id = names[obj_idxs[0]][12:16]
+        luminosities = luminosity_dict[selected_objs[obj_idxs[0]]]
+        OGLE_id = selected_objs[obj_idxs[0]][12:16]
     return luminosities, OGLE_id
 
 
@@ -73,6 +95,15 @@ MWDENSITY = MWDensity()
 def get_coordinates(rng, count):
     mw_coords = MWDENSITY.sample_eq(shape=count, rng=rng)
     return mw_coords
+
+
+def get_inclination(rng, count):
+    return rng.uniform(low=0, high=89, size=count)
+
+
+def get_inclination_single(rng, count=1):
+    inclins = rng.uniform(low=0, high=89, size=count)
+    return(inclins[0])
 
 
 def get_flux(L, d, i):
@@ -149,7 +180,7 @@ DOCUMENTATION_END:
 
 def generate_outburst(start_index, event_num, file_name):
 
-    i_event = 0
+    i_event = start_index
     rng = np.random.default_rng(start_index)
 
     with open(file_name, 'w') as f:
@@ -158,7 +189,7 @@ def generate_outburst(start_index, event_num, file_name):
         mag_es_all = []
         mag_es_lclib = []
 
-        while i_event < event_num:
+        while i_event < event_num + start_index:
             l, OGLE_id = get_luminosity(rng, 1)
             coord = get_coordinates(rng, 1)[0]
             i = get_inclination_single(rng, 1)
@@ -234,8 +265,9 @@ def main():
     gen_2 = os.path.join(directory, f'objects_2.txt')
 
     write_header(event_num=100, file_name=header_filename)
-    generate_outburst(start_index=42, event_num=50, file_name=gen_1)
-    generate_outburst(start_index=43, event_num=50, file_name=gen_2)
+    generate_outburst(start_index=0, event_num=50, file_name=gen_1)
+    generate_outburst(start_index=50, event_num=50, file_name=gen_2)
+    
     '''
     # passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
