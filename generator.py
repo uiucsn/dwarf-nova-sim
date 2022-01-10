@@ -7,6 +7,8 @@ from ch_vars.spatial_distr import MilkyWayDensityJuric2008 as MWDensity
 from ch_vars.extinction import get_sfd_thin_disk_ebv as get_extinction
 import os
 
+passbands = ['u', 'g', 'r', 'i', 'z', 'y']
+
 lum_list= []
 names = ['OGLE BLG-DN-0001_3','OGLE BLG-DN-0001_4','OGLE BLG-DN-0002_0','OGLE BLG-DN-0002_1',\
          'OGLE BLG-DN-0002_2','OGLE BLG-DN-0036_0','OGLE BLG-DN-0087_0','OGLE BLG-DN-0168_0',\
@@ -22,7 +24,8 @@ for name in names:
 luminosity_dict = dict(zip(names, lum_list))
 
 def get_inclination(rng, count):
-    return(rng.uniform(low=0, high=89, size=count))
+    return rng.uniform(low=0, high=89, size=count)
+
 
 def get_inclination_single(rng, count=1):
     inclins = rng.uniform(low=0, high=89, size=count)
@@ -43,6 +46,7 @@ def get_inclination_single(rng, count=1):
 #         luminosities.append((lum_table[['t', 'L_u','L_g','L_r','L_i','L_z', 'L_y']]))
 #     return luminosities
 
+
 def get_luminosity(rng, count):
     luminosities = []
     OGLE_id = []
@@ -62,10 +66,14 @@ def get_luminosity(rng, count):
         OGLE_id = names[obj_idxs[0]][12:16]
     return luminosities, OGLE_id
 
+
 MWDENSITY = MWDensity()
+
+
 def get_coordinates(rng, count):
     mw_coords = MWDENSITY.sample_eq(shape=count, rng=rng)
     return mw_coords
+
 
 def get_flux(L, d, i):
     return L * np.cos(i * np.pi/180)/(2*np.pi * d**2)
@@ -80,8 +88,9 @@ LSST_A_TO_EBV = {
     'y': 1.088,
 }
 
+
 def hist_mpeak(ms, m_max):
-    passbands = ['u', 'g', 'r', 'i', 'z', 'y']
+    # passbands = ['u', 'g', 'r', 'i', 'z', 'y']
     fig, axs = plt.subplots(2, 3, figsize=(24,16))
     m_peaks = []
 
@@ -106,8 +115,10 @@ def hist_mpeak(ms, m_max):
 
     return m_peak_dict
 
-def write_header(f, event_num):
-    f.write(f"""SURVEY: LSST
+
+def write_header(event_num, file_name):
+    with open(file_name, 'w') as f:
+        f.write(f"""SURVEY: LSST
 FILTERS: ugrizY
 MODEL: m-Dwarf-Flare-Model
 RECUR_TYPE: NON-RECUR
@@ -135,8 +146,98 @@ DOCUMENTATION_END:
 """
         )
 
+
+def generate_outburst(start_index, event_num, file_name):
+
+    i_event = 0
+    rng = np.random.default_rng(start_index)
+
+    with open(file_name, 'w') as f:
+        # write_header(f, event_num)
+
+        mag_es_all = []
+        mag_es_lclib = []
+
+        while i_event < event_num:
+            l, OGLE_id = get_luminosity(rng, 1)
+            coord = get_coordinates(rng, 1)[0]
+            i = get_inclination_single(rng, 1)
+            extin = get_extinction(coord.ra.deg, coord.dec.deg, coord.distance.pc, cache_dir=None)
+
+            distance_pc = coord.distance.to(u.pc).value
+            distance_cm = coord.distance.to(u.cm).value
+            ra = coord.ra.deg
+            dec = coord.dec.deg
+            coord_gal = SkyCoord(ra=ra * u.deg, dec=dec * u.deg, frame='icrs').galactic
+
+            l = l.copy()
+            l.rename(columns={'L_u': 'u', 'L_g': 'g', 'L_r': 'r', 'L_i': 'i', 'L_z': 'z', 'L_y': 'y'}, inplace=True)
+            l_no_t = l.drop(axis=1, labels='t')
+
+            flux = get_flux(L=l_no_t, d=distance_cm, i=i)
+            mag_noe = -2.5 * np.log10(flux / 3.63e-20)
+            l.update(mag_noe)
+            mag_e = l.copy()
+
+            for passband in passbands:
+                mag_e[passband] = mag_noe[passband] + extin * LSST_A_TO_EBV[passband]
+            mag_es_all.append(mag_e)
+
+            if any([np.any((mag_e[passband] > 99.0)) or np.any((mag_e[passband] < 5.0)) for passband in passbands]):
+                continue
+
+            anglematch_b = max(5, 0.5 * np.abs(coord_gal.b.deg))
+
+            f.write(
+                f'START_EVENT: {i_event}\n'
+                f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
+                f'PARVAL: {int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
+                f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
+            )
+
+            time = mag_e.loc[0]['t']
+            f.write(f'T: {time:7.4f}')
+
+            for passband in passbands:
+                f.write(f' {mag_e.loc[0][passband]:.3f}')
+            f.write(f'\n')
+
+            for i_row in range(1, len(mag_e)):
+                time = mag_e.loc[i_row]['t']
+                f.write(f'S: {time:7.4f}')
+
+                for passband in passbands:
+                    f.write(f' {mag_e.loc[i_row][passband]:.3f}')
+                f.write(f'\n')
+
+            time = mag_e.loc[len(mag_e) - 1]['t'] + 0.01
+            f.write(f'S: {time:7.4f}')
+
+            for passband in passbands:
+                f.write(f' {mag_e.loc[0][passband]:.3f}')
+            f.write(f'\n')
+            f.write(
+                f'END_EVENT: {i_event}\n'
+                '\n'
+            )
+            mag_es_lclib.append(mag_e)
+            i_event = i_event + 1
+
+
 def main():
-    passbands = ['u', 'g', 'r', 'i', 'z', 'y']
+
+    directory = 'stitch_file'
+    os.makedirs(directory, exist_ok=True)
+
+    header_filename = os.path.join(directory, f'header.txt')
+    gen_1 = os.path.join(directory, f'objects_1.txt')
+    gen_2 = os.path.join(directory, f'objects_2.txt')
+
+    write_header(event_num=100, file_name=header_filename)
+    generate_outburst(start_index=42, event_num=50, file_name=gen_1)
+    generate_outburst(start_index=43, event_num=50, file_name=gen_2)
+    '''
+    # passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
     start_index = 42
     event_num = 100000
@@ -214,6 +315,7 @@ def main():
             mag_es_lclib.append(mag_e)
             i_event = i_event + 1
     mpeak_dict = hist_mpeak(mag_es_lclib, 30)
+'''
 
 if __name__ == '__main__':
     main()
