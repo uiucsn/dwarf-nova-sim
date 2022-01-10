@@ -6,6 +6,9 @@ import astropy.units as u
 from ch_vars.spatial_distr import MilkyWayDensityJuric2008 as MWDensity
 from ch_vars.extinction import get_sfd_thin_disk_ebv as get_extinction
 import os
+import multiprocessing
+from functools import partial
+
 
 passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
@@ -265,8 +268,10 @@ def main():
     gen_2 = os.path.join(directory, f'objects_2.txt')
 
     write_header(event_num=100, file_name=header_filename)
-    generate_outburst(start_index=0, event_num=50, file_name=gen_1)
-    generate_outburst(start_index=50, event_num=50, file_name=gen_2)
+    with multiprocessing.Pool() as pool:
+        pool.starmap(partial(generate_outbursts, event_number=50), [(0, 'gen_1'), (50, 'gen_2')])
+    # generate_outburst(start_index=0, event_num=50, file_name=gen_1)
+    # generate_outburst(start_index=50, event_num=50, file_name=gen_2)
     
     '''
     # passbands = ['u', 'g', 'r', 'i', 'z', 'y']
