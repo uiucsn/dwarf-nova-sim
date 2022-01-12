@@ -4,6 +4,7 @@ from generator import get_flux, init_luminosity
 from astropy.io import ascii
 import astropy.units as u
 import matplotlib.pyplot as plt
+import os
 
 
 def read_lum(direc, selected_objs):
@@ -54,13 +55,18 @@ for name, l, extinction, distance_parsec in zip(tested_objs, lums, extinctions_l
     distance_cm = distance_parsec.to(u.cm).value
     flux = get_flux(L=l_no_t, d=distance_cm, i=i)
     mag_noe = -2.5 * np.log10(flux / 3.63e-20)
-    #Extinction?
-
+    mag_e = mag_noe + extinction
+    plt.figure()
     for passband in passbands:
-        plt.plot(t, mag_noe[passband], 'o', label=f'{name}_{passband}')
-        plt.title(f'{name}_{passband}')
-        plt.gca().invert_yaxis()
-        plt.show()
+        plt.plot(t, mag_e[passband], 'o', label=f'{passband}')
+
+    plt.gca().invert_yaxis()
+    plt.title(f'{name}')
+    plt.legend()
+    direc = 'pictures_generated'
+    os.makedirs(direc, exist_ok=True)
+    plt.savefig(os.path.join(direc, f'{name}.png'))
+    plt.close()
 
 
 
