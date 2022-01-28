@@ -10,12 +10,20 @@ import os
 passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
 
-selected_objs = ['OGLE BLG-DN-0001_3', 'OGLE BLG-DN-0001_4', 'OGLE BLG-DN-0002_0', 'OGLE BLG-DN-0002_1',
-                 'OGLE BLG-DN-0002_2', 'OGLE BLG-DN-0036_0', 'OGLE BLG-DN-0087_0', 'OGLE BLG-DN-0168_0',
-                 'OGLE BLG-DN-0174_0', 'OGLE BLG-DN-0233_1', 'OGLE BLG-DN-0286_0', 'OGLE BLG-DN-0305_2',
-                 'OGLE BLG-DN-0373_0', 'OGLE BLG-DN-0376_1', 'OGLE BLG-DN-0421_2', 'OGLE BLG-DN-0444_0',
-                 'OGLE BLG-DN-0531_0', 'OGLE BLG-DN-0588_0', 'OGLE BLG-DN-0595_0', 'OGLE BLG-DN-0690_2',
-                 'OGLE BLG-DN-0783_0', 'OGLE BLG-DN-0826_0', 'OGLE BLG-DN-0899_0']
+# selected_objs = ['OGLE BLG-DN-0001_3', 'OGLE BLG-DN-0001_4', 'OGLE BLG-DN-0002_0', 'OGLE BLG-DN-0002_1',
+#                  'OGLE BLG-DN-0002_2', 'OGLE BLG-DN-0036_0', 'OGLE BLG-DN-0087_0', 'OGLE BLG-DN-0168_0',
+#                  'OGLE BLG-DN-0174_0', 'OGLE BLG-DN-0233_1', 'OGLE BLG-DN-0286_0', 'OGLE BLG-DN-0305_2',
+#                  'OGLE BLG-DN-0373_0', 'OGLE BLG-DN-0376_1', 'OGLE BLG-DN-0421_2', 'OGLE BLG-DN-0444_0',
+#                  'OGLE BLG-DN-0531_0', 'OGLE BLG-DN-0588_0', 'OGLE BLG-DN-0595_0', 'OGLE BLG-DN-0690_2',
+#                  'OGLE BLG-DN-0783_0', 'OGLE BLG-DN-0826_0', 'OGLE BLG-DN-0899_0']
+
+selected_objs = ['OGLE BLG-DN-0001', 'OGLE BLG-DN-0001', 'OGLE BLG-DN-0002', 'OGLE BLG-DN-0002',
+                 'OGLE BLG-DN-0002', 'OGLE BLG-DN-0036', 'OGLE BLG-DN-0087', 'OGLE BLG-DN-0168',
+                 'OGLE BLG-DN-0174', 'OGLE BLG-DN-0233', 'OGLE BLG-DN-0286', 'OGLE BLG-DN-0305',
+                 'OGLE BLG-DN-0373', 'OGLE BLG-DN-0376', 'OGLE BLG-DN-0421', 'OGLE BLG-DN-0444',
+                 'OGLE BLG-DN-0531', 'OGLE BLG-DN-0588', 'OGLE BLG-DN-0595', 'OGLE BLG-DN-0690',
+                 'OGLE BLG-DN-0783', 'OGLE BLG-DN-0826', 'OGLE BLG-DN-0899']
+
 
 """
 lum_list= []
@@ -66,7 +74,7 @@ def init_luminosity(init_data_direc):
 #     return luminosities
 
 
-luminosity_dict = init_luminosity('analysis_Mdot')
+luminosity_dict = init_luminosity('Mdot_test_Jan26')
 
 
 def get_luminosity(rng, count):
@@ -147,16 +155,37 @@ def hist_mpeak(ms, m_max):
     return m_peak_dict
 
 
-def write_header(event_num, file_name):
-    with open(file_name, 'w') as f:
-        f.write(f"""SURVEY: LSST
-FILTERS: ugrizY
-MODEL: m-Dwarf-Flare-Model
-RECUR_TYPE: NON-RECUR
-MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
-NEVENT: {event_num}
+def write_header(f, event_num):
+    # with open(file_name, 'w') as f:
+#         f.write(f"""SURVEY: LSST
+# FILTERS: ugrizY
+# MODEL: m-Dwarf-Flare-Model
+# RECUR_TYPE: NON-RECUR
+# MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
+# NEVENT: {event_num}
+#
+# DOCUMENTATION:
+#   PURPOSE: Supernovae outburst ligthtcurve using OGLE data and estimated distances from Gaia
+#   REF:
+#   - AUTHOR: Qifeng Cheng
+#   USAGE_KEY: GENMODEL
+#   NOTES:
+#   - Lightcurve instances were taken from OGLE
+#   - Distance data was taken from Gaia
+#   - Extinction data was taken from SFD, Bayestar
+#   PARAMS:
+#   - OGLE_ID - OGLE Dwarf Nova Catalog object ID
+#   - start_time - Start time of the reference outburst (in HJD-2450000)
+#   - end_time - End time of the reference outburst (in HJD-2450000)
+#   - distance - Distance to the supernovae (in pc)
+#   - inclination - Inclination of the observation (in degree)
+# DOCUMENTATION_END:
+#
+# #------------------------------
+# """
+#         )
 
-DOCUMENTATION:
+    f.write(f"""DOCUMENTATION:
   PURPOSE: Supernovae outburst ligthtcurve using OGLE data and estimated distances from Gaia
   REF:
   - AUTHOR: Qifeng Cheng
@@ -173,10 +202,16 @@ DOCUMENTATION:
   - inclination - Inclination of the observation (in degree)
 DOCUMENTATION_END:
 
+SURVEY: LSST
+FILTERS: ugrizY
+MODEL: m-Dwarf-Flare-Model
+RECUR_TYPE: NON-RECUR
+MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
+NEVENT: {event_num}
+
 #------------------------------
 """
         )
-
 
 def generate_outburst(start_index, event_num, file_name):
 
@@ -257,26 +292,25 @@ def generate_outburst(start_index, event_num, file_name):
 
 def main():
 
-    directory = 'stitch_file'
-    os.makedirs(directory, exist_ok=True)
+    # directory = 'stitch_file'
+    # os.makedirs(directory, exist_ok=True)
+    #
+    # header_filename = os.path.join(directory, f'header.txt')
+    # gen_1 = os.path.join(directory, f'objects_1.txt')
+    # gen_2 = os.path.join(directory, f'objects_2.txt')
+    #
+    # write_header(event_num=100, file_name=header_filename)
+    # generate_outburst(start_index=0, event_num=50, file_name=gen_1)
+    # generate_outburst(start_index=50, event_num=50, file_name=gen_2)
 
-    header_filename = os.path.join(directory, f'header.txt')
-    gen_1 = os.path.join(directory, f'objects_1.txt')
-    gen_2 = os.path.join(directory, f'objects_2.txt')
-
-    write_header(event_num=100, file_name=header_filename)
-    generate_outburst(start_index=0, event_num=50, file_name=gen_1)
-    generate_outburst(start_index=50, event_num=50, file_name=gen_2)
-    
-    '''
     # passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
     start_index = 42
-    event_num = 100000
+    event_num = 100
     i_event = 0
     rng = np.random.default_rng(start_index)
 
-    with open('LCLIB_test.txt', 'w') as f:
+    with open('LCLIB_test_jan_26.txt', 'w') as f:
         write_header(f, event_num)
 
         mag_es_all = []
@@ -347,7 +381,7 @@ def main():
             mag_es_lclib.append(mag_e)
             i_event = i_event + 1
     mpeak_dict = hist_mpeak(mag_es_lclib, 30)
-'''
+
 
 if __name__ == '__main__':
     main()
