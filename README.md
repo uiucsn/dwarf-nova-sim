@@ -4,17 +4,20 @@
 
 ## Related Scripts
 
-Cand_all.py
+- `cand_all.py`
 
-light_curve_fitting.py
+- `light_curve_fitting.py`
 
-Light_curve_bazin.py
+>> - `Light_curve_bazin.py`
 
 ## Preparation
 
-Packages: pandas, spicy, functools, matplotlib, numpy, os, light_curve
+Install packages:
+```sh
+python3 -mpip install pandas scipy matplotlib numpy light_curve
+```
 
-Data: OGLE dwarf novae data in /phot
+Data: OGLE dwarf novae data in `./phot`
 
 ## Results
 
@@ -22,23 +25,25 @@ outburst extracted
 
 outburst extracted plots
 
-fitting plots, which is by default saved under pictures/ directory.
+fitting plots, which is by default saved under `./pictures` directory.
 
 ## Run Code
 
---Extract outburst
+### Extract outburst
 
-Cand_all.py extracts candidate outburst and return the time arrays and magnitudes arrays. It also plots the extracted data against the original OGLE data.
+`cand_all.py` extracts candidate outburst and return the time arrays and magnitudes arrays. It also plots the extracted data against the original OGLE data.
+>> Doesn't produce all figures
 
 After manually check each selected outburst, couple of good candidates have been selected and their information is stored in a csv file. 
 
---Fitting model
+### Fitting model
 
-Light_curve_fitting.py fit the extracted outbursts with peicewise function and used scipy.optimize to fit the data. It also plots the model against data per light curve and is by default saved under "pictures" directory.
+`light_curve_fitting.py` fits the extracted outbursts with piecewise function and uses `scipy.optimize` to fit the data. It also plots the model against data per light curve and is by default saved under `./pictures` directory.
+>> fails with `FileNotFoundError: [Errno 2] No such file or directory: 'Dwarf nova.csv'`
 
-Light_curve_bazin.py used bazin function to fit the data and plot it. 
+>> `Light_curve_bazin.py` used Bazin function to fit the data and plot it. 
 
-Further steps used fitting model from light_curve package which can be installed by pip
+Further steps use fitting model from `light_curve` package
 
 ## Provided results
 
@@ -46,23 +51,27 @@ Selected objects:
 
 > selected_obj = ['OGLE BLG-DN-0001', 'OGLE BLG-DN-0002', 'OGLE BLG-DN-0036', 'OGLE BLG-DN-0087',  'OGLE BLG-DN-0168', 'OGLE BLG-DN-0174', 'OGLE BLG-DN-0233', 'OGLE BLG-DN-0275',  'OGLE BLG-DN-0286', 'OGLE BLG-DN-0305', 'OGLE BLG-DN-0373', 'OGLE BLG-DN-0376', 'OGLE BLG-DN-0421', 'OGLE BLG-DN-0444', 'OGLE BLG-DN-0458', 'OGLE BLG-DN-0531', 'OGLE BLG-DN-0588', 'OGLE BLG-DN-0595', 'OGLE BLG-DN-0690', 'OGLE BLG-DN-0783', 'OGLE BLG-DN-0826', 'OGLE BLG-DN-0899']
 
-Model Fitting information: saved as a csv files "analysis/fitting_info.csv", with OGLE ID, outburst index, starting time, ending time, and model parameters. 
+Model Fitting information: saved as a csv files `analysis/fitting_info.csv`, with OGLE ID, outburst index, starting time, ending time, and model parameters. 
 
 
 
-# Retrive Distance and extinction
+# Retrieve Distance and extinction
 
 ## Related scripts
 
-Get_distance.py
+>> - `Get_distance.py`
 
-get_extinction.py
+- `get_extinction.py`
 
-## Preperation
+>> ## Preperation
+>> 
+>> Packages: cand_all, numpy, matplotlib, os, light_curve
+>> 
+>> Data: phot
+>>
+>> **Remove?**
 
-Packages: cand_all, numpy, matplotlib, os, light_curve
-
-Data: phot
+>> Describe `dustmaps.SFD.fetch()` / `dustmaps.Bayestar.fetch()` step
 
 ## Run Code
 
@@ -76,7 +85,7 @@ If distance is provided from Gaia, extinction is given by Bayestar
 
 Get_distance.py provides distance information for all extracted objects (not the manually selected objects) and is by default saved as "analysis/distance_1arcsec.csv". Objects without data from Gaia will be skipped.
 
-Get_extinction.py provides extinction information for all selected objects. Columns: OGLE ID (name), galactic coordinates (l,b), extinction from Bayestar, SFD, and Marshall.
+`get_extinction.py` provides extinction information for all selected objects. Columns: OGLE ID (name), galactic coordinates (l,b), extinction from Bayestar, SFD, and Marshall.
 
 ## Provided Results:
 

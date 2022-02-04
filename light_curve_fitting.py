@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import pandas as pd
 from scipy import optimize
 from functools import partial
@@ -88,10 +90,5 @@ def main():
     plot_piecewise_fit(t, m, p)
 
 
-
-
-
-
-
-
-
+if __name__ == '__main__':
+    main()
