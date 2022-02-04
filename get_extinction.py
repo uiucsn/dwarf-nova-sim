@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 from astropy.table import Table
 from astropy.io import ascii
 from astropy.coordinates import SkyCoord
