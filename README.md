@@ -71,7 +71,10 @@ Model Fitting information: saved as a csv files `analysis/fitting_info.csv`, wit
 >>
 >> **Remove?**
 
->> Describe `dustmaps.SFD.fetch()` / `dustmaps.Bayestar.fetch()` step
+>> Describe dustmaps data file fetching
+```sh
+python3 -c 'from dustmaps import sfd, bayestar; sfd.fetch(); beystar.fetch()'
+```
 
 ## Run Code
 
