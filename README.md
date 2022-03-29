@@ -8,8 +8,6 @@
 
 `light_curve_fitting.py`
 
-`light_curve_bazin.py`
-
 ## Preparation
 
 Install packages
@@ -68,7 +66,7 @@ Model Fitting information: saved as a csv files `analysis/fitting_info.csv`, wit
 
 Packages: cand_all, numpy, matplotlib, os, light_curve
 
-Data: phot
+Data: `./phot`
 
 ## Run Code
 
@@ -86,23 +84,27 @@ If distance is provided from Gaia, extinction is given by Bayestar
 
 ## Provided Results:
 
-Objects name, coordinates(l, b), distances, extinctions for all selected objects are given in analysis/extinction_1arces.csv
+Objects name, coordinates(l, b), distances, extinctions for all selected objects are given in `./analysis/extinction_1arces.csv`
 
 # Find Accretion rate and luminosities in other passbands
 
 ## Related Codes
 
-Find_Mdot_DerivedLuminosity.py
+`Find_Mdot_DerivedLuminosity.py`
+
+`Find_Mdot_with_error.py`
 
 ## Preparation:
 
 Packages: spicy, satrapy, functors, numpy, (matplotlib), os, light_curve, cand_all
 
-Data:phot, analysis/fitting_info.csv, analysis/extinction_1arcese.csv
+Data:`./phot`,`./analysis/fitting_info.csv`,` ./analysis/extinction_1arcese.csv`
 
 ## Run code 
 
 The code will extract outburst from original OGLE data, use Basin function to model the extracted outbursts, use standard disk model to derive accretion rate M_dot, and derive luminosity at LSST passbands. 
+
+The difference between `Find_Mdot_DerivedLuminosity.py` and `Find_Mdot_with_error.py` is that the latter one incorporate light curve magnitude error, which is what this work used. 
 
 ## Results
 
@@ -122,13 +124,13 @@ The code has already been run and results have already been saved under analysis
 
 ## Related Code
 
-Generator.py
+`Generator.py`
 
 ## Preparation
 
 packages: lumpy, astropy, matplotlib, pandas, dustmaps, ch_vars
 
-Data: analysis_Mdot, dustmaps
+Data: `./analysis_Mdot`, dustmaps
 
 ## Run Code
 
@@ -146,5 +148,5 @@ The code will generate a txt file containing the header for the file and 10k out
 
 ## Provided results
 
-The LCLIB txt file result is provided and is compressed as LCLIB_dwarf_nova_sim.txt.zip
+The LCLIB txt file result is provided and is compressed as `./LCLIB_dwarf_nova_sim.txt.zip`
 
