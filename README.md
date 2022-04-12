@@ -48,7 +48,23 @@ Further steps used fitting model from `light_curve` package
 
 Selected objects: 
 
-> selected_obj = ['OGLE BLG-DN-0001', 'OGLE BLG-DN-0002', 'OGLE BLG-DN-0036', 'OGLE BLG-DN-0087',  'OGLE BLG-DN-0168', 'OGLE BLG-DN-0174', 'OGLE BLG-DN-0233', 'OGLE BLG-DN-0275',  'OGLE BLG-DN-0286', 'OGLE BLG-DN-0305', 'OGLE BLG-DN-0373', 'OGLE BLG-DN-0376', 'OGLE BLG-DN-0421', 'OGLE BLG-DN-0444', 'OGLE BLG-DN-0458', 'OGLE BLG-DN-0531', 'OGLE BLG-DN-0588', 'OGLE BLG-DN-0595', 'OGLE BLG-DN-0690', 'OGLE BLG-DN-0783', 'OGLE BLG-DN-0826', 'OGLE BLG-DN-0899']
+> selected_obj = [
+>
+> 'OGLE BLG-DN-0001', 'OGLE BLG-DN-0002', 'OGLE BLG-DN-0036', 
+>
+> 'OGLE BLG-DN-0087',  'OGLE BLG-DN-0168', 'OGLE BLG-DN-0174',
+>
+>  'OGLE BLG-DN-0233', 'OGLE BLG-DN-0275',  'OGLE BLG-DN-0286', 
+>
+> 'OGLE BLG-DN-0305', 'OGLE BLG-DN-0373', 'OGLE BLG-DN-0376', 
+>
+> 'OGLE BLG-DN-0421', 'OGLE BLG-DN-0444', 'OGLE BLG-DN-0458',
+>
+>  'OGLE BLG-DN-0531', 'OGLE BLG-DN-0588', 'OGLE BLG-DN-0595', 
+>
+> 'OGLE BLG-DN-0690', 'OGLE BLG-DN-0783', 'OGLE BLG-DN-0826', 
+>
+> 'OGLE BLG-DN-0899']
 
 Model Fitting information: saved as a csv files `analysis/fitting_info.csv`, with OGLE ID, outburst index, starting time, ending time, and model parameters. 
 
