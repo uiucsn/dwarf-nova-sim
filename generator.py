@@ -20,7 +20,7 @@ passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 selected_objs = ['OGLE BLG-DN-0001', 'OGLE BLG-DN-0001', 'OGLE BLG-DN-0002', 'OGLE BLG-DN-0002',
                  'OGLE BLG-DN-0002', 'OGLE BLG-DN-0036', 'OGLE BLG-DN-0087', 'OGLE BLG-DN-0168',
                  'OGLE BLG-DN-0174', 'OGLE BLG-DN-0233', 'OGLE BLG-DN-0286', 'OGLE BLG-DN-0305',
-                 'OGLE BLG-DN-0373', 'OGLE BLG-DN-0376', 'OGLE BLG-DN-0421', 'OGLE BLG-DN-0444',
+                 'OGLE BLG-DN-0373', 'OGLE BLG-DN-0421', 'OGLE BLG-DN-0444',
                  'OGLE BLG-DN-0531', 'OGLE BLG-DN-0588', 'OGLE BLG-DN-0595', 'OGLE BLG-DN-0690',
                  'OGLE BLG-DN-0783', 'OGLE BLG-DN-0826', 'OGLE BLG-DN-0899']
 
@@ -195,6 +195,7 @@ def write_header(f, event_num):
   - Distance data was taken from Gaia
   - Extinction data was taken from SFD, Bayestar
   PARAMS:
+  - MWEBV - Milkyway EBV
   - OGLE_ID - OGLE Dwarf Nova Catalog object ID
   - start_time - Start time of the reference outburst (in HJD-2450000)
   - end_time - End time of the reference outburst (in HJD-2450000)
@@ -204,9 +205,9 @@ DOCUMENTATION_END:
 
 SURVEY: LSST
 FILTERS: ugrizY
-MODEL: m-Dwarf-Flare-Model
+MODEL: Dwarf-Nova-Model
 RECUR_TYPE: NON-RECUR
-MODEL_PARNAMES: OGLE_ID,start_time,end_time,distance,inclination.
+MODEL_PARNAMES: MWEBV, OGLE_ID,start_time,end_time,distance,inclination.
 NEVENT: {event_num}
 
 #------------------------------
@@ -257,7 +258,7 @@ def generate_outburst(start_index, event_num, file_name):
             f.write(
                 f'START_EVENT: {i_event}\n'
                 f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
-                f'PARVAL: {int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
+                f'PARVAL: {extin:.3f},{int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
                 f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
             )
 
@@ -306,11 +307,11 @@ def main():
     # passbands = ['u', 'g', 'r', 'i', 'z', 'y']
 
     start_index = 42
-    event_num = 100
+    event_num = 100000
     i_event = 0
     rng = np.random.default_rng(start_index)
 
-    with open('LCLIB_test_jan_26.txt', 'w') as f:
+    with open('LCLIB_Jul_6.txt', 'w') as f:
         write_header(f, event_num)
 
         mag_es_all = []
@@ -349,7 +350,7 @@ def main():
             f.write(
                 f'START_EVENT: {i_event}\n'
                 f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
-                f'PARVAL: {int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
+                f'PARVAL: {extin:.3f},{int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
                 f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
             )
 
