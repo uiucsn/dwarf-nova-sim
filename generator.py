@@ -186,28 +186,28 @@ def write_header(f, event_num):
 #         )
 
     f.write(f"""DOCUMENTATION:
-  PURPOSE: Supernovae outburst ligthtcurve using OGLE data and estimated distances from Gaia
+  PURPOSE: Simulating supernovae outburst ligthtcurve using templates from OGLE and estimated distances from Gaia
   REF:
   - AUTHOR: Qifeng Cheng
   USAGE_KEY: GENMODEL
   NOTES:
-  - Lightcurve instances were taken from OGLE
+  - Simulated lightcurve instances using OGLE data as templates
   - Distance data was taken from Gaia
   - Extinction data was taken from SFD, Bayestar
   PARAMS:
-  - MWEBV - Milkyway EBV
+  - MWEBV - Milkyway E(B-V) from 3D dust model
   - OGLE_ID - OGLE Dwarf Nova Catalog object ID
   - start_time - Start time of the reference outburst (in HJD-2450000)
   - end_time - End time of the reference outburst (in HJD-2450000)
-  - distance - Distance to the supernovae (in pc)
-  - inclination - Inclination of the observation (in degree)
+  - distance - Distance to the simulated outburst (in pc)
+  - inclination - Inclination of the simulated outburst (in degree)
 DOCUMENTATION_END:
 
 SURVEY: LSST
 FILTERS: ugrizY
 MODEL: Dwarf-Nova-Model
 RECUR_TYPE: NON-RECUR
-MODEL_PARNAMES: MWEBV, OGLE_ID,start_time,end_time,distance,inclination.
+MODEL_PARNAMES: MWEBV,OGLE_ID,start_time,end_time,distance,inclination
 NEVENT: {event_num}
 
 #------------------------------
@@ -258,7 +258,7 @@ def generate_outburst(start_index, event_num, file_name):
             f.write(
                 f'START_EVENT: {i_event}\n'
                 f'NROW: {len(mag_e)+1} l: {coord_gal.l.value:.5f} b: {coord_gal.b.value:.5f}\n'
-                f'PARVAL: {extin:.3f},{int(OGLE_id)},{mag_e["t"][0]},{mag_e["t"][len(mag_e) - 1]},{distance_pc:.2f},{i}\n'
+                f'PARVAL: {extin:.3f},{int(OGLE_id)},{mag_e["t"][0]:.4f},{mag_e["t"][len(mag_e) - 1]:.4f},{distance_pc:.2f},{i}\n'
                 f'ANGLEMATCH_b: {anglematch_b:.1f}\n'
             )
 
